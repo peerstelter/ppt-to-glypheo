@@ -205,21 +205,23 @@ def interactive_mapping(cnt) -> Tuple[List[RGB], List[RGB]]:
     return de_colors, en_colors
 
 def _strip_trailing_slide_number(text: str, slide_no: int) -> str:
-    """Entfernt eine isolierte oder am Ende angehängte Foliennummer."""
+    """Entfernt isolierte oder angehängte Foliennummern.
+
+    Entfernt komplette Zeilen, die nur aus Ziffern bestehen (unabhängig vom
+    erwarteten Folienindex), und schneidet am Zeilenende angehängte Zahlen ab.
+    """
     if not text:
         return text
-    # Zeilenweise prüfen
     lines = text.splitlines()
     for i, ln in enumerate(lines):
-        # exakte Zahl
-        if ln.strip() == str(slide_no):
+        stripped = ln.strip()
+        # Zeilen, die nur aus Ziffern bestehen, komplett entfernen
+        if stripped.isdigit():
             lines[i] = ""
             continue
-        # am Ende angehängt: "... text 12"
-        if ln.rstrip().endswith(" " + str(slide_no)):
-            # nur entfernen, wenn vor der Zahl Whitespace ist
-            lines[i] = re.sub(rf"\s{slide_no}$", "", ln.rstrip())
-    cleaned = "\n".join(l for l in lines if l is not None)
+        # Am Ende angehängte Zahlen ("... Text 12") entfernen
+        lines[i] = re.sub(r"\s\d+$", "", ln.rstrip())
+    cleaned = "\n".join(l for l in lines if l.strip())
     return cleaned
 
 def extract_to_csv(
