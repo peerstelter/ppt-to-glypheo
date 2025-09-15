@@ -318,6 +318,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                    help="Foliennummern-Platzhalter als Text mit ausgeben.")
     p.add_argument("--interactive", action="store_true",
                    help="Scannt Farben und fragt interaktiv nach Mapping de/en.")
+    p.add_argument("--xlsx", action="store_true",
+                   help="Im Auto-Modus bzw. bei Ausgabeverzeichnissen XLSX statt CSV schreiben.")
     args = p.parse_args(argv)
 
     de_colors = parse_color_list(args.de_color) if args.de_color else [hex_to_rgb("FFFFFF")]
@@ -350,13 +352,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             de_colors, en_colors = interactive_mapping(cnt)
             first = False
         if args.output.lower() == "auto":
-            out_path = os.path.splitext(pptx_path)[0] + ".csv"
+            ext = ".xlsx" if args.xlsx else ".csv"
+            out_path = os.path.splitext(pptx_path)[0] + ext
         else:
             out_path = args.output
             if len(pptx_files) > 1 and os.path.isdir(args.output):
+                ext = ".xlsx" if args.xlsx else ".csv"
                 out_path = os.path.join(
                     args.output,
-                    os.path.splitext(os.path.basename(pptx_path))[0] + ".csv",
+                    os.path.splitext(os.path.basename(pptx_path))[0] + ext,
                 )
         extract_to_file(
             pptx_path=pptx_path,
