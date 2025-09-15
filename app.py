@@ -306,12 +306,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     en_colors = parse_color_list(args.en_color)
 
     if os.path.isdir(args.pptx):
-        pptx_files = sorted(glob.glob(os.path.join(args.pptx, "*.pptx")))
+        pptx_files = sorted(
+            f for f in glob.glob(os.path.join(args.pptx, "*.pptx"))
+            if not os.path.basename(f).startswith("~$")
+        )
         if not pptx_files:
             print(f"Keine .pptx-Dateien in {args.pptx} gefunden.", file=sys.stderr)
             return 1
     else:
         pptx_files = [args.pptx]
+    pptx_files = [f for f in pptx_files if not os.path.basename(f).startswith("~$")]
+    if not pptx_files:
+        print("Keine gültigen .pptx-Dateien gefunden (temporäre Dateien werden ignoriert).", file=sys.stderr)
+        return 1
 
     first = True
     for pptx_path in pptx_files:
