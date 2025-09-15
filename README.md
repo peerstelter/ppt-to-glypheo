@@ -14,6 +14,9 @@ pip install python-pptx pillow
 
 ```bash
 python app.py INPUT.pptx OUTPUT.csv|OUTPUT.xlsx [Optionen]
+
+# oder gesamter Ordner:
+python app.py ORDNER auto [Optionen]
 ```
 
 ### Wichtige Optionen
@@ -22,6 +25,7 @@ python app.py INPUT.pptx OUTPUT.csv|OUTPUT.xlsx [Optionen]
 - `--tolerance` N – Farbtoleranz je Kanal (Standard: 8)
 - `--unknown-policy {german,english,skip}` – Verhalten für Runs ohne explizite Farbe
 - `--interactive` – interaktives Zuordnen der Farben
+- `--xlsx` – Im `auto`-Modus bzw. bei Ausgabeverzeichnissen XLSX statt CSV schreiben
 
 Die Ausgabedatei besitzt immer den Aufbau `FOLIENNUMMER;DEUTSCH;ENGLISCH`. Bei CSV wird UTF‑8‑BOM sowie Semikolon als Trennzeichen verwendet. Leere Folien erzeugen eine leere Zeile, um die Reihenfolge zu erhalten.
 
