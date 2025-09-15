@@ -7,6 +7,7 @@
 * **CSV format (always):** `FOLIENNUMMER;DEUTSCH;ENGLISCH` (with header)
 * **Empty slides:** exported as an **empty row** to preserve slide order
 * **German = white** text (`#FFFFFF`), **English = every non‑German color** (unless `--en-color` is specified)
+* **Mixed-color paragraphs are split** so each colored segment goes to the matching column
 * **Placeholders** (slide number, date, header/footer) are **ignored by default**; slide numbers can be included explicitly
 
 Also see the German version: **[README\_de.md](README_de.md)**
