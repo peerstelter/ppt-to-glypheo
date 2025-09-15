@@ -87,27 +87,45 @@ def iter_shape(shp, skip_placeholders=True, include_slide_numbers=False):
             return
         yield shp
 
-def extract_paragraphs_with_colors(slide, skip_placeholders=True, include_slide_numbers=False) -> List[Tuple[str, List[Optional[RGB]]]]:
-    items = []
+def extract_runs_with_colors(slide,
+                             skip_placeholders: bool = True,
+                             include_slide_numbers: bool = False
+                             ) -> List[List[Tuple[str, Optional[RGB]]]]:
+    """Extrahiert Texte segmentweise entsprechend der Run-Farbe.
+
+    Rückgabe: Liste von Absätzen. Jeder Absatz ist eine Liste aus
+    (Textsegment, RGB-Farbe oder None)."""
+    paragraphs: List[List[Tuple[str, Optional[RGB]]]] = []
     for shp in slide.shapes:
-        for node in iter_shape(shp, skip_placeholders=skip_placeholders, include_slide_numbers=include_slide_numbers):
+        for node in iter_shape(shp,
+                               skip_placeholders=skip_placeholders,
+                               include_slide_numbers=include_slide_numbers):
             tf = getattr(node, "text_frame", None)
             if tf is None:
                 continue
             for para in tf.paragraphs:
-                texts = []
-                colors: List[Optional[RGB]] = []
                 if len(para.runs) == 0:
                     continue
+                segments: List[Tuple[str, Optional[RGB]]] = []
+                buf_txt = ""
+                buf_color: Optional[RGB] = None
                 for run in para.runs:
                     txt = run.text or ""
                     if not txt:
                         continue
-                    texts.append(txt)
-                    colors.append(get_run_rgb(run))
-                if texts:
-                    items.append(("".join(texts), colors))
-    return items
+                    color = get_run_rgb(run)
+                    if buf_color == color:
+                        buf_txt += txt
+                    else:
+                        if buf_txt:
+                            segments.append((buf_txt, buf_color))
+                        buf_txt = txt
+                        buf_color = color
+                if buf_txt:
+                    segments.append((buf_txt, buf_color))
+                if segments:
+                    paragraphs.append(segments)
+    return paragraphs
 
 def assign_paragraph_language(run_colors: List[Optional[RGB]],
                               de_colors: Sequence[RGB],
@@ -140,8 +158,12 @@ def assign_paragraph_language(run_colors: List[Optional[RGB]],
 def scan_colors(prs: Presentation, skip_placeholders=True, include_slide_numbers=False):
     cnt = Counter()
     for slide in prs.slides:
-        for _, colors in extract_paragraphs_with_colors(slide, skip_placeholders=skip_placeholders, include_slide_numbers=include_slide_numbers):
-            for c in colors:
+        for paragraph in extract_runs_with_colors(
+            slide,
+            skip_placeholders=skip_placeholders,
+            include_slide_numbers=include_slide_numbers,
+        ):
+            for _, c in paragraph:
                 if c is not None:
                     cnt[c] += 1
     return cnt
@@ -215,21 +237,35 @@ def extract_to_csv(
     for idx, slide in enumerate(prs.slides, start=1):
         german_parts: List[str] = []
         english_parts: List[str] = []
-
-        items = extract_paragraphs_with_colors(slide, skip_placeholders=skip_placeholders, include_slide_numbers=include_slide_numbers)
-        if not items:
+        paragraphs = extract_runs_with_colors(
+            slide,
+            skip_placeholders=skip_placeholders,
+            include_slide_numbers=include_slide_numbers,
+        )
+        if not paragraphs:
             rows.append([str(idx), "", ""])
             continue
 
-        for text, run_colors in items:
-            lang = assign_paragraph_language(run_colors, de_colors, en_colors, tol, unknown_policy)
-            if lang == "de":
-                german_parts.append(text)
-            elif lang == "en":
-                english_parts.append(text)
+        for segments in paragraphs:
+            para_has_de = False
+            para_has_en = False
+            for text, color in segments:
+                lang = assign_paragraph_language(
+                    [color], de_colors, en_colors, tol, unknown_policy
+                )
+                if lang == "de":
+                    german_parts.append(text)
+                    para_has_de = True
+                elif lang == "en":
+                    english_parts.append(text)
+                    para_has_en = True
+            if para_has_de:
+                german_parts.append("\n")
+            if para_has_en:
+                english_parts.append("\n")
 
-        german = "\n".join(german_parts).strip()
-        english = "\n".join(english_parts).strip()
+        german = "".join(german_parts).rstrip("\n")
+        english = "".join(english_parts).rstrip("\n")
 
         # Sicherheit: Foliennummer aus Text am Ende entfernen
         german = _strip_trailing_slide_number(german, idx)
