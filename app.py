@@ -226,9 +226,9 @@ def _strip_trailing_slide_number(text: str, slide_no: int) -> str:
     cleaned = "\n".join(l for l in lines if l.strip())
     return cleaned
 
-def extract_to_csv(
+def extract_to_file(
     pptx_path: str,
-    csv_path: str,
+    out_path: str,
     de_colors: Sequence[RGB],
     en_colors: Sequence[RGB],
     tol: int,
@@ -278,14 +278,32 @@ def extract_to_csv(
 
         rows.append([str(idx), german, english])
 
-    with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.writer(f, delimiter=";", quoting=csv.QUOTE_MINIMAL)
-        writer.writerows(rows)
+    ext = os.path.splitext(out_path)[1].lower()
+    if ext == ".csv":
+        with open(out_path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f, delimiter=";", quoting=csv.QUOTE_MINIMAL)
+            writer.writerows(rows)
+    elif ext == ".xlsx":
+        try:
+            from openpyxl import Workbook
+        except ImportError as e:
+            print(
+                "Fehlendes Paket. Bitte installieren Sie:\n  pip install openpyxl",
+                file=sys.stderr,
+            )
+            raise
+        wb = Workbook()
+        ws = wb.active
+        for row in rows:
+            ws.append(row)
+        wb.save(out_path)
+    else:
+        raise ValueError(f"Unbekanntes Ausgabeformat: {ext}")
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    p = argparse.ArgumentParser(description="PPTX → CSV (FOLIENNUMMER;DEUTSCH;ENGLISCH) per Schriftfarbe.")
+    p = argparse.ArgumentParser(description="PPTX → Tabelle (FOLIENNUMMER;DEUTSCH;ENGLISCH) per Schriftfarbe.")
     p.add_argument("pptx", help="Pfad zur .pptx-Datei")
-    p.add_argument("csv", help="Pfad zur Ausgabe-CSV")
+    p.add_argument("output", help="Pfad zur Ausgabedatei (.csv oder .xlsx)")
     p.add_argument("--de-color", dest="de_color", default=None,
                    help="Deutsch-Farbe(n) als Hex, mehrere mit Komma (Default: FFFFFF)")
     p.add_argument("--en-color", dest="en_color", default=None,
@@ -331,18 +349,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
             de_colors, en_colors = interactive_mapping(cnt)
             first = False
-        if args.csv.lower() == "auto":
-            csv_path = os.path.splitext(pptx_path)[0] + ".csv"
+        if args.output.lower() == "auto":
+            out_path = os.path.splitext(pptx_path)[0] + ".csv"
         else:
-            csv_path = args.csv
-            if len(pptx_files) > 1 and os.path.isdir(args.csv):
-                csv_path = os.path.join(
-                    args.csv,
+            out_path = args.output
+            if len(pptx_files) > 1 and os.path.isdir(args.output):
+                out_path = os.path.join(
+                    args.output,
                     os.path.splitext(os.path.basename(pptx_path))[0] + ".csv",
                 )
-        extract_to_csv(
+        extract_to_file(
             pptx_path=pptx_path,
-            csv_path=csv_path,
+            out_path=out_path,
             de_colors=de_colors,
             en_colors=en_colors,
             tol=args.tolerance,
@@ -350,7 +368,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             skip_placeholders=not args.no_skip_placeholders,
             include_slide_numbers=args.include_slide_numbers,
         )
-        print(f"Fertig. CSV geschrieben: {csv_path}")
+        print(f"Fertig. Datei geschrieben: {out_path}")
     return 0
 
 if __name__ == "__main__":

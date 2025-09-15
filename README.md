@@ -1,10 +1,10 @@
 # ppt-to-glypheo
 
-Extrahiert zweisprachige Texte aus PowerPoint-Dateien (`.pptx`) und schreibt sie in eine CSV-Datei. Der deutschsprachige Text wird anhand einer definierten Farbe erkannt (Standard: weiß), andersfarbige Abschnitte werden als Englisch exportiert.
+Extrahiert zweisprachige Texte aus PowerPoint-Dateien (`.pptx`) und schreibt sie wahlweise in eine CSV- oder XLSX-Datei. Der deutschsprachige Text wird anhand einer definierten Farbe erkannt (Standard: weiß), andersfarbige Abschnitte werden als Englisch exportiert.
 
 ## Voraussetzungen
 - Python 3.8+
-- Abhängigkeiten: `python-pptx`, `Pillow`
+- Abhängigkeiten: `python-pptx`, `Pillow`, optional `openpyxl` für XLSX-Ausgabe
 
 ```bash
 pip install python-pptx pillow
@@ -13,7 +13,7 @@ pip install python-pptx pillow
 ## Verwendung
 
 ```bash
-python app.py INPUT.pptx OUTPUT.csv [Optionen]
+python app.py INPUT.pptx OUTPUT.csv|OUTPUT.xlsx [Optionen]
 ```
 
 ### Wichtige Optionen
@@ -23,12 +23,12 @@ python app.py INPUT.pptx OUTPUT.csv [Optionen]
 - `--unknown-policy {german,english,skip}` – Verhalten für Runs ohne explizite Farbe
 - `--interactive` – interaktives Zuordnen der Farben
 
-Die CSV besitzt immer den Aufbau `FOLIENNUMMER;DEUTSCH;ENGLISCH` und wird mit UTF‑8‑BOM sowie Semikolon als Trennzeichen geschrieben. Leere Folien erzeugen eine leere Zeile, um die Reihenfolge zu erhalten.
+Die Ausgabedatei besitzt immer den Aufbau `FOLIENNUMMER;DEUTSCH;ENGLISCH`. Bei CSV wird UTF‑8‑BOM sowie Semikolon als Trennzeichen verwendet. Leere Folien erzeugen eine leere Zeile, um die Reihenfolge zu erhalten.
 
 ## Entwicklung
 
 ```bash
-python app.py INPUT.pptx OUTPUT.csv
+python app.py INPUT.pptx OUTPUT.xlsx
 ```
 
 ## Lizenz
