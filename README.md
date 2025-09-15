@@ -1,4 +1,4 @@
-# ppt-to-glypheo
+# ppt-to-xlsx-glypheo
 
 Extrahiert zweisprachige Texte aus PowerPoint-Dateien (`.pptx`) und schreibt sie wahlweise in eine CSV- oder XLSX-Datei. Der deutschsprachige Text wird anhand einer definierten Farbe erkannt (Standard: weiß), andersfarbige Abschnitte werden als Englisch exportiert.
 
