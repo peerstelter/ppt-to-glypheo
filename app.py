@@ -71,6 +71,12 @@ def _is_specific_placeholder(node, target_names: Sequence[str]) -> bool:
 def iter_shape(shp, skip_placeholders=True, include_slide_numbers=False):
     """Iteriert Shapes, optional Platzhalter überspringen. Foliennummern werden immer übersprungen,
     außer include_slide_numbers=True."""
+    # Platzhalter vorab prüfen, auch wenn sie in Gruppen verschachtelt sind
+    if _is_specific_placeholder(shp, ("SLIDE_NUMBER",)) and not include_slide_numbers:
+        return
+    if skip_placeholders and _is_specific_placeholder(shp, ("DATE", "DATETIME", "FOOTER", "HEADER")):
+        return
+
     if shp.shape_type == MSO_SHAPE_TYPE.GROUP:
         for s in shp.shapes:
             yield from iter_shape(s, skip_placeholders=skip_placeholders, include_slide_numbers=include_slide_numbers)
@@ -80,11 +86,6 @@ def iter_shape(shp, skip_placeholders=True, include_slide_numbers=False):
                 if cell.text_frame is not None:
                     yield cell
     else:
-        # Slide number placeholder?
-        if _is_specific_placeholder(shp, ("SLIDE_NUMBER",)) and not include_slide_numbers:
-            return
-        if skip_placeholders and _is_specific_placeholder(shp, ("DATE", "DATETIME", "FOOTER", "HEADER")):
-            return
         yield shp
 
 def extract_runs_with_colors(slide,
