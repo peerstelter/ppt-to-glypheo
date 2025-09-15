@@ -16,6 +16,8 @@ import argparse
 import csv
 import sys
 import re
+import os
+import glob
 from collections import Counter
 from typing import List, Optional, Sequence, Tuple
 
@@ -303,22 +305,45 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     de_colors = parse_color_list(args.de_color) if args.de_color else [hex_to_rgb("FFFFFF")]
     en_colors = parse_color_list(args.en_color)
 
-    prs = Presentation(args.pptx)
-    if args.interactive:
-        cnt = scan_colors(prs, skip_placeholders=not args.no_skip_placeholders, include_slide_numbers=args.include_slide_numbers)
-        de_colors, en_colors = interactive_mapping(cnt)
+    if os.path.isdir(args.pptx):
+        pptx_files = sorted(glob.glob(os.path.join(args.pptx, "*.pptx")))
+        if not pptx_files:
+            print(f"Keine .pptx-Dateien in {args.pptx} gefunden.", file=sys.stderr)
+            return 1
+    else:
+        pptx_files = [args.pptx]
 
-    extract_to_csv(
-        pptx_path=args.pptx,
-        csv_path=args.csv,
-        de_colors=de_colors,
-        en_colors=en_colors,
-        tol=args.tolerance,
-        unknown_policy=args.unknown_policy,
-        skip_placeholders=not args.no_skip_placeholders,
-        include_slide_numbers=args.include_slide_numbers,
-    )
-    print(f"Fertig. CSV geschrieben: {args.csv}")
+    first = True
+    for pptx_path in pptx_files:
+        if args.interactive and first:
+            prs = Presentation(pptx_path)
+            cnt = scan_colors(
+                prs,
+                skip_placeholders=not args.no_skip_placeholders,
+                include_slide_numbers=args.include_slide_numbers,
+            )
+            de_colors, en_colors = interactive_mapping(cnt)
+            first = False
+        if args.csv.lower() == "auto":
+            csv_path = os.path.splitext(pptx_path)[0] + ".csv"
+        else:
+            csv_path = args.csv
+            if len(pptx_files) > 1 and os.path.isdir(args.csv):
+                csv_path = os.path.join(
+                    args.csv,
+                    os.path.splitext(os.path.basename(pptx_path))[0] + ".csv",
+                )
+        extract_to_csv(
+            pptx_path=pptx_path,
+            csv_path=csv_path,
+            de_colors=de_colors,
+            en_colors=en_colors,
+            tol=args.tolerance,
+            unknown_policy=args.unknown_policy,
+            skip_placeholders=not args.no_skip_placeholders,
+            include_slide_numbers=args.include_slide_numbers,
+        )
+        print(f"Fertig. CSV geschrieben: {csv_path}")
     return 0
 
 if __name__ == "__main__":

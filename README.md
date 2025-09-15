@@ -21,6 +21,9 @@ pip install python-pptx pillow
 
 # Default: German = white (#FFFFFF), English = all other colors, placeholders ignored
 python pptx_to_csv_by_color.py INPUT.pptx OUTPUT.csv
+
+# Process all .pptx files in a folder with auto-named CSVs
+python pptx_to_csv_by_color.py /path/to/folder Auto
 ```
 
 **Windows / PowerShell example**
@@ -45,8 +48,11 @@ pip install python-pptx pillow
 ## Usage
 
 ```bash
-python pptx_to_csv_by_color.py INPUT.pptx OUTPUT.csv [options]
+python pptx_to_csv_by_color.py INPUT.pptx|FOLDER OUTPUT.csv|Auto [options]
 ```
+
+`INPUT` may be a single PowerPoint file or a folder. When `OUTPUT` is `Auto`,
+the tool writes each CSV next to its source `.pptx` using the same base name.
 
 ### Common options
 
